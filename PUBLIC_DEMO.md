@@ -6,7 +6,7 @@ Im v2-Projektordner in PowerShell starten:
 .\Start-PublicDemo.ps1
 ```
 
-Das Skript startet den bestehenden Python-Check auf `127.0.0.1:8012` und einen Cloudflare Quick Tunnel. Es gibt den öffentlichen HTTPS-Link aus. Der Link steht zusätzlich in `.runtime/public-url.txt`. Ein erneuter Start übernimmt eine noch laufende Demo. Nach einem Neustart des Tunnels wird eine neue Adresse vergeben.
+Das Skript startet den bestehenden Python-Check auf `127.0.0.1:8012` und einen Cloudflare Quick Tunnel. Es gibt den öffentlichen HTTPS-Link aus. Der Link steht zusätzlich in `.runtime/public-url.txt`. Ein erneuter Start übernimmt eine noch laufende Demo. Nach einem Neustart des Tunnels wird eine neue Adresse vergeben. Nach `git pull` lädt `.\Start-PublicDemo.ps1 -Restart` den Webserver neu und behält den laufenden Tunnel samt URL bei.
 
 Beenden:
 
