@@ -1,22 +1,81 @@
-"""Actual local Notion CSV cases, restricted to the evaluation input schema."""
-import csv
-from pathlib import Path
+"""Transcribed brief data only; absent downloadable source files are not fabricated."""
 
-
-def load_cases():
-    """Read packaged CSV snapshots; dev reference labels have been excluded."""
-    cases = []
-    for name in ('buildings_dev.csv', 'buildings_eval.csv'):
-        with (Path(__file__).parent / 'data' / name).open(encoding='utf-8', newline='') as stream:
-            cases.extend(dict(row) for row in csv.DictReader(stream))
-    return cases
-
-
-CASES = load_cases()
-SYNTHETIC = {'building_id': 'DEMO', 'construction_year': 2005, 'floor_area_m2': 180,
-             'renovation_status': 'fully', 'annual_consumption_kwh': 24000,
-             'energy_carrier': 'gas', 'energy_carrier_detail': 'natural gas',
-             'persons_in_household': 3, 'hot_water_via_heating': True,
-             'heat_distribution': 'radiators', 'pipe_system': 'two-pipe', 'flow_temperature_c': 50,
-             'radiator_info': '', 'rooms': None, 'location': '',
-             'building_notes': 'Synthetisches Beispiel innerhalb des CSV-Schemas; kein nuuEnergy-Referenzgebäude.'}
+CASES = [
+    {
+        "id": "B-01",
+        "set": "dev",
+        "construction_year": 2001,
+        "floor_area_m2": 195,
+        "heat_distribution": "radiators",
+        "pipe_system": "unknown",
+        "energy_carrier": "lpg",
+        "annual_consumption": 10000,
+        "location": "Münchner Raum (82xxx)",
+        "reference_heating_load_kw": 9.6,
+        "expected_verdict": "green",
+    },
+    {
+        "id": "B-02",
+        "set": "dev",
+        "construction_year": 2005,
+        "floor_area_m2": 180,
+        "heat_distribution": "underfloor",
+        "pipe_system": "unknown",
+        "energy_carrier": "gas",
+        "annual_consumption": 15500,
+        "location": "Münchner Raum (82xxx)",
+        "reference_heating_load_kw": 9.7,
+        "expected_verdict": "green",
+    },
+    {
+        "id": "B-03",
+        "set": "dev",
+        "construction_year": 1970,
+        "floor_area_m2": 200,
+        "heat_distribution": "radiators",
+        "pipe_system": "two-pipe",
+        "energy_carrier": "oil",
+        "annual_consumption": 40000,
+        "location": "Hamburger Raum (21xxx)",
+        "reference_heating_load_kw": 14.5,
+        "expected_verdict": "yellow",
+    },
+    {
+        "id": "B-04",
+        "set": "eval",
+        "construction_year": 1987,
+        "floor_area_m2": 160,
+        "heat_distribution": "radiators",
+        "pipe_system": "single-pipe",
+        "energy_carrier": "oil",
+        "annual_consumption": 25000,
+        "location": "Münchner Raum (85xxx)",
+    },
+    {
+        "id": "B-05",
+        "set": "eval",
+        "construction_year": 2006,
+        "floor_area_m2": 125,
+        "heat_distribution": "mixed",
+        "pipe_system": "unknown",
+        "energy_carrier": "gas",
+        "annual_consumption": 27000,
+        "location": "Münchner Raum (85xxx)",
+    },
+]
+SYNTHETIC = {
+    "construction_year": 2005,
+    "floor_area_m2": 180,
+    "renovation_status": "fully",
+    "annual_consumption": 24000,
+    "energy_carrier": "gas",
+    "persons_in_household": 3,
+    "hot_water_via_heating": True,
+    "heat_distribution": "radiators",
+    "pipe_system": "two-pipe",
+    "flow_temperature_c": 50,
+    "investment_eur": 20000,
+    "subsidy_eur": 8000,
+    "horizon_years": 20,
+    "notes": "Synthetisches Demonstrationsbeispiel, kein nuuEnergy-Referenzgebäude.",
+}

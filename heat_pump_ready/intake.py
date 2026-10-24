@@ -1,69 +1,99 @@
-"""Validate exactly the input columns of buildings_eval.csv, including CSV blanks."""
-import math
-from dataclasses import fields
-from datetime import date
-from .contracts import UserInput
+"""Translate UI JSON into UserInput; no extraction or domain assessment occurs here."""
 
-INPUT_COLUMNS = tuple(field.name for field in fields(UserInput))
+import base64
+import binascii
+import math
+from datetime import date
+from .contracts import UserInput, Attachment
+
 ENUMS = {
-    'renovation_status': ('unknown', 'unrenovated', 'partially', 'fully', 'low_energy'),
-    'energy_carrier': ('gas', 'oil', 'lpg', 'district', 'electric'),
-    'heat_distribution': ('unknown', 'radiators', 'underfloor', 'mixed'),
-    'pipe_system': ('unknown', 'single-pipe', 'two-pipe'),
+    "renovation_status": ("unknown", "unrenovated", "partially", "fully", "low_energy"),
+    "consumption_unit": ("kwh", "litre", "m3"),
+    "energy_carrier": ("gas", "oil", "lpg", "district", "electric"),
+    "heat_distribution": ("unknown", "radiators", "underfloor", "mixed"),
+    "pipe_system": ("unknown", "single-pipe", "two-pipe"),
 }
 BOUNDS = {
-    'construction_year': (1700, date.today().year), 'floor_area_m2': (1, 10000),
-    'annual_consumption_kwh': (0, 10000000), 'persons_in_household': (0, 100),
-    'flow_temperature_c': (10, 100), 'rooms': (1, 1000),
+    "construction_year": (1700, date.today().year),
+    "floor_area_m2": (1, 10000),
+    "annual_consumption": (0, 10000000),
+    "persons_in_household": (0, 100),
+    "flow_temperature_c": (10, 100),
+    "investment_eur": (0, 1000000),
+    "subsidy_eur": (0, 1000000),
+    "horizon_years": (1, 50),
 }
-INTEGER_FIELDS = ('construction_year', 'persons_in_household', 'rooms')
-TEXT_FIELDS = ('building_id', 'energy_carrier_detail', 'radiator_info', 'building_notes', 'location')
+INTEGER_FIELDS = ("construction_year", "persons_in_household")
 
 
 def build_user_input(payload: dict) -> UserInput:
-    """Accept CSV strings or typed JSON; reject extra input variables explicitly."""
+    """Build immutable input from JSON. Raises: ValueError for invalid fields/files."""
     if not isinstance(payload, dict):
-        raise ValueError('Eingabe muss ein JSON-Objekt sein.')
-    extra = set(payload) - set(INPUT_COLUMNS)
-    if extra:
-        raise ValueError('Nicht im CSV-Eingabeschema: ' + ', '.join(sorted(extra)))
+        raise ValueError("Eingabe muss ein JSON-Objekt sein.")
     values = {}
     for key, (low, high) in BOUNDS.items():
         raw = payload.get(key)
-        if raw is None or raw == '':
+        if raw is None or raw == "":
             continue
         if isinstance(raw, bool):
-            raise ValueError(key + ': Zahl erwartet.')
+            raise ValueError(key + ": Zahl erwartet.")
         try:
             value = float(raw)
         except (TypeError, ValueError) as error:
-            raise ValueError(key + ': Zahl erwartet.') from error
+            raise ValueError(key + ": Zahl erwartet.") from error
         if not math.isfinite(value) or not low <= value <= high:
-            raise ValueError(f'{key}: Wert muss zwischen {low} und {high} liegen.')
+            raise ValueError(f"{key}: Wert muss zwischen {low} und {high} liegen.")
         if key in INTEGER_FIELDS and not value.is_integer():
-            raise ValueError(key + ': Ganze Zahl erwartet.')
+            raise ValueError(key + ": Ganze Zahl erwartet.")
         values[key] = int(value) if key in INTEGER_FIELDS else value
     for key, allowed in ENUMS.items():
-        raw = payload.get(key)
-        if raw is None or raw == '':
-            continue
-        if not isinstance(raw, str) or raw not in allowed:
-            raise ValueError(key + ': Unbekannte Auswahl.')
-        values[key] = raw
-    hot_water = payload.get('hot_water_via_heating')
-    if isinstance(hot_water, str):
-        choices = {'': None, 'yes': True, 'no': False, 'true': True, 'false': False}
-        if hot_water.lower() not in choices:
-            raise ValueError('Warmwasser muss yes/no, true/false oder leer sein.')
-        hot_water = choices[hot_water.lower()]
+        if key in payload:
+            if payload[key] not in allowed:
+                raise ValueError(key + ": Unbekannte Auswahl.")
+            values[key] = payload[key]
+    hot_water = payload.get("hot_water_via_heating")
     if hot_water is not None and type(hot_water) is not bool:
-        raise ValueError('Warmwasser muss true, false oder null sein.')
-    values['hot_water_via_heating'] = hot_water
-    for key in TEXT_FIELDS:
-        raw = payload.get(key, '')
-        if not isinstance(raw, str) or len(raw) > 4000:
-            raise ValueError(key + ': Ungültiger Text.')
-        values[key] = raw
-    # The source labels LPG as gas plus an explicit fuel detail; preserve the
-    # original columns and resolve that distinction only in calculation helpers.
+        raise ValueError("Warmwasser muss true, false oder null sein.")
+    values["hot_water_via_heating"] = hot_water
+    for key in ("location", "notes"):
+        value = payload.get(key, "")
+        if not isinstance(value, str) or len(value) > 4000:
+            raise ValueError(key + ": Ungültiger Text.")
+        values[key] = value
+    values["attachments"] = parse_attachments(payload.get("attachments", []))
     return UserInput(**values)
+
+
+def parse_attachments(files: list) -> tuple:
+    """Validate at most six files, each at most 4 MiB. Returns: attachment tuple."""
+    if not isinstance(files, list) or len(files) > 6:
+        raise ValueError("Maximal sechs Dateien erlaubt.")
+    result = []
+    signatures = {
+        "image/jpeg": b"\xff\xd8\xff",
+        "image/png": b"\x89PNG\r\n\x1a\n",
+        "application/pdf": b"%PDF-",
+    }
+    for item in files:
+        if not isinstance(item, dict):
+            raise ValueError("Ungültige Datei.")
+        mime = item.get("media_type")
+        category = item.get("category")
+        name = item.get("name", "Datei")
+        if mime not in signatures or category not in (
+            "bill",
+            "radiator",
+            "pipes",
+            "outdoor",
+        ):
+            raise ValueError("Dateityp oder Bildkategorie nicht unterstützt.")
+        if not isinstance(name, str) or len(name) > 255:
+            raise ValueError("Ungültiger Dateiname.")
+        try:
+            content = base64.b64decode(item.get("data", ""), validate=True)
+        except (ValueError, TypeError, binascii.Error) as error:
+            raise ValueError("Datei ist nicht gültig kodiert.") from error
+        if not content.startswith(signatures[mime]) or len(content) > 4 * 1024 * 1024:
+            raise ValueError("Datei ist ungültig oder größer als 4 MiB.")
+        result.append(Attachment(name, mime, category, content))
+    return tuple(result)

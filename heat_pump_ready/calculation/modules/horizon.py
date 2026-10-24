@@ -1,16 +1,26 @@
-"""A user-selected investment horizon is absent from the authorized CSV."""
+"""Calculate exactly one metric: horizon."""
+
+from ...config import AssessmentConfig
+from ...contracts import UserInput, CalculationOutput, MetricResult
 from .base import MetricModule
 
 
 class HorizonModule(MetricModule):
-    """Do not introduce a new financial input under the CSV-only contract."""
-    output_key = 'horizon'
+    """Derive horizon without making an investment decision."""
+
+    output_key = "horizon"
     requires = ()
 
-    def __init__(self, config):
-        """Retain registry compatibility."""
-        pass
+    def __init__(self, config: AssessmentConfig) -> None:
+        """Store validated calculation configuration; no IO is performed."""
+        self.config = config
 
-    def calculate(self, user_input, previous_results):
-        """Missing horizon is unavailable, rather than an invented twenty years."""
-        return self.missing('Betrachtungszeitraum nicht in buildings_eval.csv enthalten.')
+    def calculate(
+        self, user_input: UserInput, previous_results: CalculationOutput
+    ) -> MetricResult:
+        """Return one metric from input and declared prior metrics; inputs stay unchanged."""
+        return self.available(
+            user_input.horizon_years,
+            "Jahre",
+            ("Vom Nutzer gewählter Betrachtungszeitraum.",),
+        )

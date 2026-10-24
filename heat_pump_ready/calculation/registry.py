@@ -1,4 +1,5 @@
 """Explicit module order; adding a metric requires a contract and a producer."""
+
 from ..config import AssessmentConfig
 from ..llm.interfaces import LLMRunner
 from .modules.useful_heat import UsefulHeatModule
@@ -16,10 +17,7 @@ from .modules.horizon import HorizonModule
 from .modules.annual_consumption import AnnualConsumptionModule
 from .modules.pipe_system import PipeSystemModule
 from .modules.radiator_type import RadiatorTypeModule
-from .modules.heat_load_range import HeatLoadRangeModule
-from .modules.transmission_heat_transfer import TransmissionHeatTransferModule
-from .modules.ventilation_heat_transfer import VentilationHeatTransferModule
-from .modules.tabula_space_heating_demand import TabulaSpaceHeatingDemandModule
+
 
 def build_modules(config: AssessmentConfig, runner: LLMRunner) -> tuple:
     """Return one ordered producer per output key with explicit dependencies."""
@@ -30,10 +28,6 @@ def build_modules(config: AssessmentConfig, runner: LLMRunner) -> tuple:
         SpaceHeatingDemandModule(config),
         ConsumptionHeatLoadModule(config),
         AreaHeatLoadModule(config),
-        HeatLoadRangeModule(),
-        TransmissionHeatTransferModule(),
-        VentilationHeatTransferModule(),
-        TabulaSpaceHeatingDemandModule(),
         AnnualPerformanceFactorModule(config),
         CurrentEnergyCostModule(config),
         HeatPumpEnergyCostModule(config),

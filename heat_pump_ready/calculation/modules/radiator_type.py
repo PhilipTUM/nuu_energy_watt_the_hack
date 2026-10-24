@@ -1,21 +1,28 @@
-"""Extract a radiator type only when it is explicitly documented in radiator_info."""
-import re
-from .base import MetricModule
+"""Extract a single radiator type only when one radiator image is supplied."""
+
+from ...contracts import UserInput, CalculationOutput, MetricResult
+from .extraction import ExtractionModule
 
 
-class RadiatorTypeModule(MetricModule):
-    """A documented type is not a measurement of radiator dimensions or output."""
-    output_key = 'radiator_type'
+class RadiatorTypeModule(ExtractionModule):
+    """A pictured radiator does not describe every radiator in the building."""
+
+    output_key = "radiator_type"
     requires = ()
 
-    def __init__(self, runner):
-        """Registry compatibility; no image fields exist in the CSV schema."""
-        pass
-
-    def calculate(self, user_input, previous_results):
-        """Recognize explicit type 11/22/33; avoid counting radiator quantities."""
-        types = set(re.findall(r'\b(?:type|typ)\s*[:=]?\s*(11|22|33)\b', user_input.radiator_info, re.IGNORECASE))
-        if len(types) != 1:
-            return self.missing('Heizkörpertyp 11/22/33 nicht eindeutig dokumentiert. Maße und Nennleistung fehlen; keine Leistungsdeckung ableitbar.')
-        return self.available(next(iter(types)), evidence=('Explizite Typangabe in radiator_info; gilt nicht automatisch für alle Heizkörper.',),
-                              uncertainty='Ohne Maße, Nennleistung und Raumheizlast keine Dimensionierung bei 55 °C möglich.')
+    def calculate(
+        self, user_input: UserInput, previous_results: CalculationOutput
+    ) -> MetricResult:
+        """Return type 11/22/33 for one pictured radiator; ambiguous sets stay unknown."""
+        images = [
+            file for file in user_input.attachments if file.category == "radiator"
+        ]
+        if len(images) > 1:
+            return self.missing(
+                "Für diese Kennzahl bitte genau ein repräsentatives Heizkörperfoto wählen."
+            )
+        return self.extract(
+            images,
+            "Heizkörpertyp: 11, 22 oder 33 als String, nur bei sichtbaren Platten/Konvektorlagen. Kein Rückschluss auf Größe oder ausreichende Leistung.",
+            ("11", "22", "33"),
+        )
