@@ -22,6 +22,14 @@ Für eine vollständige Demo im Formular **„Vollständiges Demohaus (synthetis
 - [Coding Principles](CODING_PRINCIPLES.md): Entwicklungsregeln.
 - [Originalbeschreibung](docs/project_description_original.md): unveränderte Ausgangsfassung.
 
+## Fachliche Weiterarbeit
+
+- [Offene Punkte und Demoannahmen](docs/OFFENE_PUNKTE.md): priorisierte Checkliste mit Abnahmekriterien.
+- [Alle Berechnungen und offizielle Quellen](docs/BERECHNUNGEN.md): Formeln, Herkunft, Gültigkeit und Grenzen pro Modul.
+- [Testprotokoll](docs/TESTPROTOKOLL.md): Testdaten, Rechenfälle, Fachvergleich, LLM-/Browserprüfung und Freigabe.
+
+Die vollständigen Entwicklungsdaten sind inzwischen unter `data/dev_csv/` vorhanden. Die Browser-Beispiele verwenden weiterhin die verkürzten fest hinterlegten Angaben; der Originaldatenimport ist ein offener Arbeitspunkt. Die neue Dokumentation enthält einen Diagnosevergleich der drei dev-Fälle.
+
 ## LLM-Modi
 
 Standard ist `disabled`: Alle numerischen Berechnungen funktionieren mit manuellen Angaben. Bild- und Rechnungserkennung bleiben unbekannt.
@@ -63,7 +71,7 @@ python3 -B -m unittest discover -s tests -v
 - Kein Vergleichstarif für Flüssiggas, Fernwärme oder direkte Elektroheizung.
 - PDFs werden angenommen, aber noch nicht ausgewertet; für Modellanalyse Rechnungsfotos verwenden.
 - Außenstandortfotos und Freitext werden noch nicht fachlich ausgewertet.
-- Original-CSV-/JSON-Dateien fehlen; keine behauptete Übereinstimmung mit allen Referenzwerten.
+- Entwicklungs-CSV/JSON sind vorhanden, aber noch nicht an die Browser-Demo angebunden. Eval-Quelldateien fehlen; fachliche Abweichungen sind im Testprotokoll dokumentiert.
 - API/MLX-Inferenz benötigt separat konfigurierte Ressourcen; der Standardstart lädt kein Modell.
 
 Die Anwendung speichert Uploads nicht dauerhaft. Der lokale Standardbibliothek-Server ist für den Hackathon vorgesehen und darf nicht als öffentlicher Produktionsserver eingesetzt werden.

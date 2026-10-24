@@ -20,3 +20,7 @@ Das Beispiel ergab 9,06 kW verbrauchsbasierte Heizlast, 7,2–10,8 kW flächenba
 - Kein vollständiger Vergleich mit Original-CSV-/JSON-Daten, weil diese noch fehlen.
 - PDF-Inhaltsanalyse, Außenaufstellungsanalyse und fachliche Interpretation von Freitext sind noch nicht implementiert.
 - Keine Messung der Modelllaufzeit auf Zielhardware; die Drei-Minuten-Anforderung ist für echte multimodale Verarbeitung noch zu verifizieren.
+
+## Ergänzung: Recherche- und Dokumentationsrunde vom 24.10.2026
+
+Die Entwicklungsdateien liegen inzwischen in `data/dev_csv/` vor. Die frühere Aussage zu fehlenden Originaldaten beschreibt den Stand der ersten Umsetzung. Die 17 Tests wurden erneut erfolgreich ausgeführt. Ein read-only Diagnosevergleich mit den vollständigen dev-Angaben ergab Verbrauchsheizlasten von 2,4 / 5,32 / 16,6 kW gegenüber Referenzen von 9,6 / 9,7 / 14,5 kW. Diese Abweichungen sind keine erfolgreiche fachliche Validierung. Vollständiges Vorgehen, Quellen und offene Punkte stehen in [TESTPROTOKOLL.md](TESTPROTOKOLL.md), [BERECHNUNGEN.md](BERECHNUNGEN.md) und [OFFENE_PUNKTE.md](OFFENE_PUNKTE.md).

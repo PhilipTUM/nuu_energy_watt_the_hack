@@ -1,4 +1,5 @@
 """Explicit module order; adding a metric requires a contract and a producer."""
+
 from ..config import AssessmentConfig
 from ..llm.interfaces import LLMRunner
 from .modules.useful_heat import UsefulHeatModule
@@ -16,6 +17,7 @@ from .modules.horizon import HorizonModule
 from .modules.annual_consumption import AnnualConsumptionModule
 from .modules.pipe_system import PipeSystemModule
 from .modules.radiator_type import RadiatorTypeModule
+
 
 def build_modules(config: AssessmentConfig, runner: LLMRunner) -> tuple:
     """Return one ordered producer per output key with explicit dependencies."""

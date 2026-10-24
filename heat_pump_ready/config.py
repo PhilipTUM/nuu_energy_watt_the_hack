@@ -1,10 +1,13 @@
 """Validated challenge assumptions and runtime configuration."""
+
 from dataclasses import dataclass, fields
 import math
+
 
 @dataclass(frozen=True)
 class AssessmentConfig:
     """Positive parameters in kWh, hours, EUR and dimensionless efficiencies."""
+
     boiler_efficiency: float = 0.88
     hot_water_kwh_per_person: float = 1000.0
     full_load_hours: float = 2000.0
@@ -22,6 +25,6 @@ class AssessmentConfig:
         for field in fields(self):
             value = getattr(self, field.name)
             if not math.isfinite(value) or value <= 0:
-                raise ValueError('Invalid configuration: ' + field.name)
+                raise ValueError("Invalid configuration: " + field.name)
         if self.boiler_efficiency > 1 or self.discrepancy_ratio <= 1:
-            raise ValueError('Invalid efficiency or discrepancy ratio')
+            raise ValueError("Invalid efficiency or discrepancy ratio")
