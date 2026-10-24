@@ -18,13 +18,11 @@ from .llm.interfaces import LLMRequest, RunnerError
 WEB = Path(__file__).parent / "web"
 
 
-def make_handler(runner, mode, public_origin="", chat_runner=None, chat_model=""):
+def make_handler(runner, mode, public_origin=""):
     """Bind injected services to one HTTP handler; serialize resource-heavy inference."""
     config = AssessmentConfig()
     modules = build_modules(config, runner)
     lock = threading.Lock()
-    chat_service = chat_runner if chat_runner is not None else runner
-    chat_mode = "local" if chat_runner is not None else mode
     public = urlsplit(public_origin)
     if public_origin and (
         public.scheme != "https" or not public.hostname or public.username
@@ -80,8 +78,6 @@ def make_handler(runner, mode, public_origin="", chat_runner=None, chat_model=""
                     200,
                     {
                         "runner": mode,
-                        "chat_runner": chat_mode,
-                        "chat_model": chat_model,
                         "modules": [
                             {"key": m.output_key, "requires": m.requires}
                             for m in modules
@@ -182,7 +178,7 @@ def make_handler(runner, mode, public_origin="", chat_runner=None, chat_model=""
                         or not isinstance(message.get("text"), str)
                         or len(message["text"]) > 8000):
                     raise ValueError("Ungültiger Gesprächsverlauf.")
-            if chat_mode == "disabled":
+            if mode == "disabled":
                 return self.send_content(503, {"error": "Noch kein LLM aktiviert. Bitte ein Modell konfigurieren."})
             prompt = (
                 "Du bist der deutschsprachige Wärme-Assistent des lokalen Wärmepumpen-Checks. "
@@ -198,7 +194,7 @@ def make_handler(runner, mode, public_origin="", chat_runner=None, chat_model=""
             if not lock.acquire(blocking=False):
                 return self.send_content(429, {"error": "Das Modell ist beschäftigt. Bitte gleich erneut versuchen."})
             try:
-                response = chat_service.generate(LLMRequest(prompt))
+                response = runner.generate(LLMRequest(prompt))
                 if not isinstance(response.text, str) or not response.text.strip():
                     raise RunnerError("Das Modell hat keine Antwort geliefert.")
                 return self.send_content(200, {"answer": response.text[:8000], "model": response.model})
@@ -214,12 +210,12 @@ def make_handler(runner, mode, public_origin="", chat_runner=None, chat_model=""
     return Handler
 
 
-def serve(runner, mode, port, public_origin="", chat_runner=None, chat_model=""):
+def serve(runner, mode, port, public_origin=""):
     """Run a loopback server until interrupted and reliably close the selected runner."""
     runner.start()
     try:
         with ThreadingHTTPServer(
-            ("127.0.0.1", port), make_handler(runner, mode, public_origin, chat_runner, chat_model)
+            ("127.0.0.1", port), make_handler(runner, mode, public_origin)
         ) as server:
             print(f"Heat Pump Ready: http://localhost:{port} (LLM: {mode})", flush=True)
             server.serve_forever()
