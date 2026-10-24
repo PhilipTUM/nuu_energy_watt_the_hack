@@ -2,6 +2,7 @@
 from ...config import AssessmentConfig
 from ...contracts import UserInput, CalculationOutput, MetricResult
 from .base import MetricModule
+from ..fuels import resolved_carrier
 
 class CurrentEnergyCostModule(MetricModule):
     """Derive current_energy_cost without making an investment decision."""
@@ -15,7 +16,8 @@ class CurrentEnergyCostModule(MetricModule):
     def calculate(self, user_input: UserInput, previous_results: CalculationOutput) -> MetricResult:
         """Return one metric from input and declared prior metrics; inputs stay unchanged."""
         prices = {'gas': self.config.gas_price_eur_kwh, 'oil': self.config.oil_price_eur_kwh}
-        if user_input.energy_carrier not in prices:
+        carrier = resolved_carrier(user_input)
+        if carrier not in prices:
             return self.missing('Kein vorgegebener Vergleichstarif für diesen Energieträger.')
-        price = prices[user_input.energy_carrier]
-        return self.available(previous_results.annual_consumption.value * price, '€/a', (f'Brennstoffpreis {price:.2f} €/kWh; nur Energiebezug.',))
+        price = prices[carrier]
+        return self.available(previous_results.annual_consumption.value * price, '€/a', (f'Brennstoffpreis {price:.2f} €/kWh; feste Challenge-Vorgabe; nur Energiebezug.',), demonstration=True)

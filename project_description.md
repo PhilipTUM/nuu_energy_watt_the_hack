@@ -1,5 +1,7 @@
 # Heat Pump Ready? – nuuEnergy Challenge
 
+> Aktueller Nutzerauftrag: ausschließlich die 16 Eingabespalten von `Data_Notion/buildings_eval.csv`. Uploads und zusätzliche Investitions-/Gebäudefelder entfallen im aktuellen Prototyp. Maßgeblicher Implementierungsstand: [Berechnungsgrundlagen](docs/BERECHNUNGSGRUNDLAGEN.md), [KONZEPT.md](KONZEPT.md) und [README.md](README.md). Die folgenden Challenge-Anforderungen dokumentieren den ursprünglichen weiteren Rahmen.
+
 > Eine ehrliche erste Einschätzung zur Wärmepumpeneignung in weniger als drei Minuten.
 
 **Track:** Buildings & Everyday Energy  

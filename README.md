@@ -1,69 +1,67 @@
 # Heat Pump Ready
 
-Lokaler Hackathon-Prototyp für die nuuEnergy Challenge. Eingaben → Einzelkennzahlmodule → Output-Dataclass → separater Validator.
+Lokaler Browser-Prototyp für die nuuEnergy Challenge. Der aktuelle Eingabevertrag besteht **ausschließlich aus den 16 Spalten von `Data_Notion/buildings_eval.csv`**. Zusätzliche Gebäudedaten, Uploads oder Investitionsangaben werden nicht abgefragt; zusätzliche API-Eingabefelder werden abgelehnt.
 
-## Start
+## Start unter Windows
 
-Python 3.9 oder neuer, keine Pflichtpakete:
+Im Ordner `Prototype/nuu_energy_watt_the_hack`:
 
-```bash
-python3 -m heat_pump_ready
+```powershell
+& "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" -B -m heat_pump_ready --runner disabled
 ```
 
-Öffnen: **http://localhost:8000**. Beenden mit `Ctrl+C`. Alternativer Port: `python3 -m heat_pump_ready --port 8001`.
+Danach **http://localhost:8000** öffnen. Terminal geöffnet lassen, beenden mit `Ctrl+C`. Alternativer Port: `--port 8001`. Bei korrekt eingerichtetem Python funktioniert auch `python -m heat_pump_ready`.
 
-Für eine vollständige Demo im Formular **„Vollständiges Demohaus (synthetisch)“** auswählen und berechnen. Die B-01–B-05-Beispiele enthalten nur bekannte Angaben aus der Projektbeschreibung; fehlende Werte werden nicht erfunden.
+Python ab 3.9, keine Pflichtpakete, keine Modellinferenz beim Standardstart.
 
-## Dokumentation
+## Verwendung
 
-- [Projektbeschreibung](project_description.md): konsolidierte Challenge-Anforderungen.
-- [Ausführliches Konzept](KONZEPT.md): Verträge, Module, Berechnungen, Entscheidung und Grenzen.
-- [Validierungsstand](docs/VALIDIERUNG.md): durchgeführte Prüfungen und Grenzen.
-- [Coding Principles](CODING_PRINCIPLES.md): Entwicklungsregeln.
-- [Originalbeschreibung](docs/project_description_original.md): unveränderte Ausgangsfassung.
+B-01 bis B-05 auswählen und berechnen. Die Beispiele stammen jetzt aus den tatsächlichen lokalen Notion-CSV-Dateien; fehlende Werte werden unverändert übernommen. Die beigepackten Kopien enthalten bei den Entwicklungsfällen keine Referenzheizlast oder erwartete Ampel. Alternativ Angaben in denselben 16 Formularfeldern eingeben. Das synthetische Beispiel verwendet ebenfalls ausschließlich dieses Schema.
 
-## LLM-Modi
+- Heizlast aus Verbrauch und Gebäudeklasse sowie deren gemeinsame Spanne.
+- TABULA-Vergleichsspannen für Transmission, Lüftung und jährlichen Raumwärmebedarf.
+- Technische Ampel mit Gründen, offenen Angaben und Fachprüfungen.
+- Energiekosten und Ersparnis, sofern Energieträger und JAZ bestimmbar sind.
+- Quellen, Umrechnung der Energiebezugsfläche und Annahmen an jeder Kennzahl.
+- Ergebnisse als JSON herunterladbar.
 
-Standard ist `disabled`: Alle numerischen Berechnungen funktionieren mit manuellen Angaben. Bild- und Rechnungserkennung bleiben unbekannt.
+Investitionskosten, Förderung und Betrachtungszeitraum fehlen im zugelassenen Schema. Deshalb werden Nettoinvestition und Amortisation **nicht berechnet**. Beide Evaluierungsfälle haben keine dokumentierte Vorlauftemperatur; ihre JAZ, Wärmepumpenkosten und Ersparnis bleiben offen.
 
-API-Modus für einen Chat-Completions-kompatiblen Endpunkt:
+## Feste Annahmen
 
-```bash
-export LLM_API_URL='https://YOUR-PROVIDER/v1/chat/completions'
-export LLM_MODEL='YOUR-VISION-MODEL'
-# LLM_API_KEY über deine lokale Umgebung setzen, nicht ins Repository schreiben.
-python3 -m heat_pump_ready --runner api
+| Größe | Wert |
+|---|---:|
+| Wärmepumpenstrom | 0,26 €/kWh |
+| Erdgas | 0,11 €/kWh |
+| Heizöl | 1,70 €/Liter ≈ 0,17 €/kWh bei 10 kWh/Liter |
+| JAZ Fußbodenheizung | 4,0 |
+| JAZ Heizkörper bis einschließlich 55 °C | 3,5 |
+| JAZ über 55 bis einschließlich 60 °C | 2,8 |
+| Jahresnutzungsgrad | 0,88 |
+| Zentrales Warmwasser | 1.000 kWh / Person und Jahr |
+| Volllaststunden | 2.000 h/a |
+
+Mischsysteme benötigen die gemeinsame Vorlauftemperatur. LPG wird über `energy_carrier_detail` von Erdgas unterschieden und erhält keinen erfundenen Vergleichstarif. `annual_consumption_kwh` enthält bereits kWh, auch bei Öl; Literangaben im Beschreibungstext werden nicht nochmals umgerechnet.
+
+## Quellen und Grenzen
+
+[Berechnungsgrundlagen](docs/BERECHNUNGSGRUNDLAGEN.md) dokumentiert die Normabschnitte, TABULA-Datenfelder und Technical Guardrails. [KONZEPT.md](KONZEPT.md) beschreibt den aktuellen Datenfluss, [Validierung](docs/VALIDIERUNG.md) die Prüfungen.
+
+Die Norm liefert die Bilanzstruktur, keinen vollständigen Gebäudenachweis aus diesen wenigen Eingaben. Bauteilgeometrien, eindeutige U-Werte mit Flächen, Luftwechsel, Klimazeitreihen und Wärmeerträge fehlen. Eine Gebäude-Monatsbilanz oder Norm-Heizlast wird deshalb nicht behauptet. TABULA-Spannen sind Szenarien über passende Baualtersklassen und Gebäudetypen, keine statistischen Konfidenzintervalle und keine Messwerte des Hauses.
+
+Bild-/Rechnungserkennung ist im CSV-Modus nicht angebunden. Die vorhandenen Runner und Experimentdateien bleiben als Erweiterungsbestand erhalten. Der Server ist ausschließlich für lokalen Hackathon-Betrieb vorgesehen.
+
+## Tests und Datenimport
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" -B -m unittest discover -s tests -v
 ```
 
-Der konfigurierte Anbieter muss Bildnachrichten unterstützen. Es gibt keine automatische Weiterleitung lokaler Daten an eine API. Der aktivierte API-Modus zeigt den externen Datentransfer im Uploadbereich an.
+Die versionierten Daten benötigen keine Excel-Bibliothek zur Laufzeit. Zum erneuten Import sind `openpyxl` und die lokalen Originaldateien nötig:
 
-Optional lokal auf Apple Silicon:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install mlx-vlm Pillow
-export LLM_MODEL='YOUR-COMPATIBLE-MLX-VISION-MODEL'
-python -m heat_pump_ready --runner mlx
+```powershell
+python tools/import_tabula.py --source-root "..\.."
+python -m tools.import_building_cases --source-root "..\.."
 ```
 
-Eine kompatible Python-/MLX-Version und genügend Speicher sind erforderlich. Der gewünschte Gemma-Modellpfad kann über `LLM_MODEL` eingesetzt werden; Verfügbarkeit und Kompatibilität des konkreten Modells wurden hier nicht live verifiziert. Die vorhandene Gemma-Experimentdatei bleibt erhalten, wird aber nicht importiert.
-
-## Tests
-
-```bash
-python3 -B -m unittest discover -s tests -v
-```
-
-## Demonstrationsgrenzen
-
-- Einfache Amortisation ohne Zinsen, Wartung, Grundpreise und Preisentwicklung.
-- Breite Demo-Heizlastspanne für nicht eindeutig definierte Gebäudeklassen.
-- Konservative, noch nicht vollständig kalibrierte technische Ampel.
-- Kein Vergleichstarif für Flüssiggas, Fernwärme oder direkte Elektroheizung.
-- PDFs werden angenommen, aber noch nicht ausgewertet; für Modellanalyse Rechnungsfotos verwenden.
-- Außenstandortfotos und Freitext werden noch nicht fachlich ausgewertet.
-- Original-CSV-/JSON-Dateien fehlen; keine behauptete Übereinstimmung mit allen Referenzwerten.
-- API/MLX-Inferenz benötigt separat konfigurierte Ressourcen; der Standardstart lädt kein Modell.
-
-Die Anwendung speichert Uploads nicht dauerhaft. Der lokale Standardbibliothek-Server ist für den Hackathon vorgesehen und darf nicht als öffentlicher Produktionsserver eingesetzt werden.
+Die Original-PDF, Excel- und CSV-Dateien bleiben unverändert.

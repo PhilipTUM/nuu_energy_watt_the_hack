@@ -14,4 +14,4 @@ class ConsumptionHeatLoadModule(MetricModule):
 
     def calculate(self, user_input: UserInput, previous_results: CalculationOutput) -> MetricResult:
         """Return one metric from input and declared prior metrics; inputs stay unchanged."""
-        return self.available(previous_results.space_heating_demand.value / self.config.full_load_hours, 'kW', (f'{self.config.full_load_hours:g} Volllaststunden pro Jahr; keine Norm-Heizlast.',))
+        return self.available(previous_results.space_heating_demand.value / self.config.full_load_hours, 'kW', (f'{self.config.full_load_hours:g} Volllaststunden pro Jahr (Challenge-Annahme); keine Norm-Heizlast.',), demonstration=True, uncertainty='Verbrauch nicht witterungsbereinigt; Zusatzwärme und Nutzerverhalten nicht quantifiziert.')

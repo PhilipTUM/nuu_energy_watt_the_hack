@@ -31,7 +31,7 @@ def check_plausibility(results: CalculationOutput, config: AssessmentConfig) -> 
                 issues.append(metric.key + ': Nicht endlicher Wert.')
             if value < 0 and metric.key != 'annual_savings':
                 issues.append(metric.key + ': Negativer Wert ist fachlich unplausibel.')
-        if isinstance(metric.value, tuple) and metric.value[0] > metric.value[1]:
+        if metric.key in ('heat_load_area', 'heat_load_range', 'transmission_heat_transfer', 'ventilation_heat_transfer', 'tabula_space_heating_demand') and isinstance(metric.value, tuple) and metric.value[0] > metric.value[1]:
             issues.append(metric.key + ': Ungültige Spannengrenzen.')
     consumption, area = results.heat_load_consumption, results.heat_load_area
     if is_available(consumption) and is_available(area):
@@ -52,6 +52,8 @@ def assess_readiness(results: CalculationOutput, issues: List[str]) -> Tuple[str
         return 'yellow', ['Rohrsystem ist unbekannt; Vor-Ort-Prüfung bleibt offen.']
     if pipe.value == 'single-pipe':
         return 'yellow', ['Einrohrsystem: hydraulische Prüfung vor einer Empfehlung erforderlich.']
+    if not any(is_available(metric) for metric in (results.heat_load_consumption, results.heat_load_area)):
+        return 'yellow', ['Heizlastabschätzung fehlt; Heizflächenart allein belegt keine Eignung.']
     if is_available(jaz) and pipe.value == 'two-pipe' and not pipe.uncertainty:
         return 'green', []
     return 'yellow', ['Vorlauftemperatur oder Rohrsystem muss fachlich bestätigt werden.']
@@ -72,18 +74,37 @@ def decide_economics(results: CalculationOutput, readiness: str) -> Tuple[str, s
             'Wirtschaftliche Kennzahlen liegen vor; technische Eignung ist noch offen.')
 
 
-def validate_and_decide(results: CalculationOutput, config: AssessmentConfig) -> InvestmentDecision:
+def validate_and_decide(results: CalculationOutput, config: AssessmentConfig, user_input=None) -> InvestmentDecision:
     """Compose plausibility, readiness and economic rules without IO or recalculation.
 
     Args:
         results: Immutable completed metrics; unavailable fields stay unavailable.
         config: Validated rule thresholds and challenge assumptions.
+        user_input: Optional CSV facts for specific-load and extra-heat checks.
     Returns:
         A separate decision with provenance and outstanding professional checks.
     """
     issues = check_plausibility(results, config)
     missing = [key for key in REQUIRED if not is_available(results.get(key))]
     readiness, reasons = assess_readiness(results, issues)
+    checks = list(CHECKS)
+    if user_input is not None and user_input.floor_area_m2:
+        for key in ('heat_load_consumption', 'heat_load_area'):
+            metric = results.get(key)
+            if not is_available(metric):
+                continue
+            values = metric.value if isinstance(metric.value, tuple) else (metric.value,)
+            if min(values) * 1000 / user_input.floor_area_m2 > 75:
+                reasons.append('Über etwa 75 W/m²: bessere Fenster oder Dämmung prüfen; kein Wärmepumpen-Ausschlusskriterium.')
+                break
+        note = user_input.building_notes.lower()
+        if any(word in note for word in ('wood stove', 'holzofen', 'kamin', 'solar thermal', 'solartherm')):
+            checks.append('Zusatzheizung/Solarthermie dokumentiert: Jahresverbrauch deckt möglicherweise nicht den gesamten Wärmebedarf; kein unbelegter Ertrag ergänzt.')
+            reasons.append('Verbrauch enthält nicht sicher alle Wärmeerträge; Zusatzheizung/Solarthermie vor Ort klären.')
+            if readiness == 'green':
+                readiness = 'yellow'
+        if not is_available(results.radiator_type) and user_input.heat_distribution in ('radiators', 'mixed'):
+            checks.append('Heizkörpertyp, Maße und Leistung nicht vollständig dokumentiert; erforderliche Vorlauftemperatur und raumweise Leistungsdeckung messen. Die grobe Halbierung bei 55 °C ist kein Dimensionierungsnachweis.')
     uncertain = any(is_available(metric) and metric.uncertainty
                     for metric in (results.annual_consumption, results.pipe_system))
     verdict = 'undetermined'
@@ -96,6 +117,6 @@ def validate_and_decide(results: CalculationOutput, config: AssessmentConfig) ->
     if uncertain:
         summary = 'Noch nicht beurteilbar: Entscheidungsrelevante Modellangaben sind noch unbestätigt.'
         reasons.append('Entscheidungsrelevante LLM-Schätzungen müssen manuell bestätigt werden.')
-    demo = is_available(results.payback_period)
-    return InvestmentDecision(verdict, readiness, summary, tuple(reasons), tuple(issues), tuple(missing), CHECKS,
-                              ('plausibility-v1', 'readiness-demo-v1', 'simple-payback-demo-v1'), demo)
+    demo = any(is_available(results.get(key)) and results.get(key).demonstration for key in results.__dataclass_fields__)
+    return InvestmentDecision(verdict, readiness, summary, tuple(reasons), tuple(issues), tuple(missing), tuple(checks),
+                              ('plausibility-csv-tabula-v2', 'readiness-csv-v2', 'simple-payback-demo-v1'), demo)

@@ -18,4 +18,4 @@ class HotWaterDemandModule(MetricModule):
             return self.available(0.0, 'kWh/a', ('Warmwasser wird separat erzeugt.',))
         if user_input.hot_water_via_heating is None or user_input.persons_in_household is None:
             return self.missing('Warmwasserbereitung und Personenanzahl fehlen.')
-        return self.available(user_input.persons_in_household * self.config.hot_water_kwh_per_person, 'kWh/a', (f'{self.config.hot_water_kwh_per_person:g} kWh Warmwasser pro Person und Jahr.',))
+        return self.available(user_input.persons_in_household * self.config.hot_water_kwh_per_person, 'kWh/a', (f'{self.config.hot_water_kwh_per_person:g} kWh Warmwasser pro Person und Jahr (Challenge-Annahme).',), demonstration=True)

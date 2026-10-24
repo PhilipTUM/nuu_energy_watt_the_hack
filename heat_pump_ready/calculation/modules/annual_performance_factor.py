@@ -15,12 +15,10 @@ class AnnualPerformanceFactorModule(MetricModule):
     def calculate(self, user_input: UserInput, previous_results: CalculationOutput) -> MetricResult:
         """Return one metric from input and declared prior metrics; inputs stay unchanged."""
         temperature = user_input.flow_temperature_c
-        if user_input.heat_distribution == 'underfloor' and temperature is None:
-            return self.available(self.config.jaz_underfloor, 'JAZ', ('Fußbodenheizung: angenommener Betrieb bei ca. 35 °C.',))
+        if user_input.heat_distribution == 'underfloor':
+            return self.available(self.config.jaz_underfloor, 'JAZ', ('Feste Vorgabe: Fußbodenheizung JAZ 4,0, typischer Betrieb um 35 °C; keine Norm-JAZ.',))
         if temperature is None or user_input.heat_distribution == 'unknown':
             return self.missing('Heizflächenart und/oder benötigte Vorlauftemperatur fehlen.')
-        if user_input.heat_distribution == 'underfloor' and temperature <= 35:
-            return self.available(self.config.jaz_underfloor, 'JAZ')
         if temperature <= 55:
             return self.available(self.config.jaz_low_temperature, 'JAZ', ('Challenge-Zuordnung bis 55 °C; Mischsystem nach gemeinsamer Vorlauftemperatur.',))
         if temperature <= 60:

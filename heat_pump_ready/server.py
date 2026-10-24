@@ -45,7 +45,7 @@ def make_handler(runner, mode):
             if self.path == '/api/health':
                 return self.send_content(200, {'status': 'ready', 'runner': mode})
             if self.path == '/api/config':
-                cases = [{key: value for key, value in case.items() if key not in ('reference_heating_load_kw', 'expected_verdict')} for case in CASES]
+                cases = CASES
                 return self.send_content(200, {'runner': mode, 'modules': [{'key': m.output_key, 'requires': m.requires} for m in modules], 'cases': cases, 'synthetic': SYNTHETIC})
             self.send_content(404, {'error': 'Nicht gefunden.'})
 
@@ -78,7 +78,7 @@ def make_handler(runner, mode):
                     return self.send_content(429, {'error': 'Eine Berechnung läuft bereits. Bitte gleich erneut versuchen.'})
                 try:
                     results = pipeline.run(user_input)
-                    decision = validate_and_decide(results, config)
+                    decision = validate_and_decide(results, config, user_input)
                 finally:
                     lock.release()
                 self.send_content(200, {'metrics': asdict(results), 'decision': asdict(decision), 'configuration': asdict(config), 'version': '0.1.0-demo', 'runner': mode})

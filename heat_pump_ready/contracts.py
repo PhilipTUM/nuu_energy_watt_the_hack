@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 from typing import Optional, Union, Tuple
 
-MetricValue = Union[float, str, Tuple[float, float]]
+MetricValue = Union[float, str, Tuple[float, ...]]
 
 @dataclass(frozen=True)
 class Attachment:
@@ -15,24 +15,23 @@ class Attachment:
 
 @dataclass(frozen=True)
 class UserInput:
-    """User-confirmed facts. None means unknown; files are immutable byte payloads."""
+    """Exactly the 16 input columns in buildings_eval.csv; None/empty means unknown."""
+    building_id: str = ''
     construction_year: Optional[int] = None
     floor_area_m2: Optional[float] = None
     renovation_status: str = 'unknown'
-    annual_consumption: Optional[float] = None
-    consumption_unit: str = 'kwh'
-    energy_carrier: str = 'gas'
-    persons_in_household: Optional[int] = None
-    hot_water_via_heating: Optional[bool] = None
     heat_distribution: str = 'unknown'
+    annual_consumption_kwh: Optional[float] = None
+    energy_carrier: str = 'gas'
+    energy_carrier_detail: str = ''
+    radiator_info: str = ''
     pipe_system: str = 'unknown'
     flow_temperature_c: Optional[float] = None
-    investment_eur: Optional[float] = None
-    subsidy_eur: Optional[float] = None
-    horizon_years: float = 20.0
+    persons_in_household: Optional[int] = None
+    hot_water_via_heating: Optional[bool] = None
+    rooms: Optional[int] = None
+    building_notes: str = ''
     location: str = ''
-    notes: str = ''
-    attachments: Tuple[Attachment, ...] = ()
 
 @dataclass(frozen=True)
 class MetricResult:
@@ -56,6 +55,10 @@ class CalculationOutput:
     space_heating_demand: Optional[MetricResult] = None
     heat_load_consumption: Optional[MetricResult] = None
     heat_load_area: Optional[MetricResult] = None
+    heat_load_range: Optional[MetricResult] = None
+    transmission_heat_transfer: Optional[MetricResult] = None
+    ventilation_heat_transfer: Optional[MetricResult] = None
+    tabula_space_heating_demand: Optional[MetricResult] = None
     radiator_type: Optional[MetricResult] = None
     pipe_system: Optional[MetricResult] = None
     annual_performance_factor: Optional[MetricResult] = None

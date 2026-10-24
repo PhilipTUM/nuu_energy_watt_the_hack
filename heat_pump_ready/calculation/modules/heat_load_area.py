@@ -30,4 +30,4 @@ class AreaHeatLoadModule(MetricModule):
             low, high, demo = 40, 180, True
         else:
             return self.missing('Baujahr oder eindeutige Gebäudeklasse fehlt.')
-        return self.available((area * low / 1000, area * high / 1000), 'kW', (f'{low}–{high} W/m²; grobe Gebäudeklasse.',), demonstration=demo, uncertainty='Breite Demonstrationsspanne bei ungeklärter Gebäudeklasse.' if demo else 'Grobe Challenge-Richtwerte.')
+        return self.available((area * low / 1000, area * high / 1000), 'kW', (f'{low}–{high} W/m²; grobe Gebäudeklasse.',), demonstration=True, uncertainty='Breite Demonstrationsspanne bei ungeklärter Gebäudeklasse.' if demo else 'Grobe Challenge-Richtwerte, keine Norm-Heizlast und keine TABULA-Gebäudezuweisung.')
